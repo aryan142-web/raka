@@ -1,15 +1,8 @@
+import Provider from "./provider";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import ConvexClientProvider from "./ConvexClientProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata = {
   title: "Create Next App",
@@ -18,11 +11,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="en" suppressHydrationWarning className="h-full w-full">
+      <body className="min-h-screen w-full bg-orange-100 text-black overflow-x-hidden">
+        <ConvexClientProvider>
+          <Provider>
+            <main className="min-h-screen w-full">
+              {children}
+            </main>
+            <Toaster />
+          </Provider>
+        </ConvexClientProvider>
       </body>
     </html>
   );
