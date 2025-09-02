@@ -24,10 +24,38 @@ function Hero() {
   const createWorkspace = useMutation(api.workspace.createWorkspace);
   const router = useRouter();
 
+  // --- Helper: format & lightly autocorrect user input ---
+  const formatPrompt = (raw) => {
+    if (!raw || typeof raw !== "string") return raw || "";
+
+    let s = raw.replace(/\r\n/g, "\n").replace(/\t/g, " ").replace(/\s+/g, " ").trim();
+    s = s.replace(/ (\d)/, "\n$1");
+    s = s.replace(/(\d)(?=[A-Za-z])/g, "$1 ");
+    s = s.replace(/(\n|^)\s*([1-9][0-9]*)[-–—\.]/g, "$1$2 ");
+
+    const corrections = {
+      "\\bcrea\\b": "create",
+      "\\bcretae\\b": "create",
+    };
+    for (const pattern in corrections) {
+      s = s.replace(new RegExp(pattern, "gi"), (match) => {
+        const replacement = corrections[pattern];
+        return match[0] === match[0].toUpperCase()
+          ? replacement.charAt(0).toUpperCase() + replacement.slice(1)
+          : replacement;
+      });
+    }
+
+    s = s.charAt(0).toUpperCase() + s.slice(1);
+    return s;
+  };
+
   // ✅ Generate Workspace
   const onGenerate = async (input) => {
     try {
-      if (!input || input.trim().length === 0) {
+      const finalInput = formatPrompt(input);
+
+      if (!finalInput || finalInput.trim().length === 0) {
         toast.error("Please enter something before generating!");
         return;
       }
@@ -42,9 +70,7 @@ function Hero() {
         return;
       }
 
-      // ✅ Preserve user formatting (newlines/spaces)
-      const msg = { role: "user", content: input };
-
+      const msg = { role: "user", content: finalInput };
       setMessages([...(messages || []), msg]);
 
       const workspaceId = await createWorkspace({
@@ -101,10 +127,21 @@ function Hero() {
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             placeholder={Lookup.INPUT_PLACEHOLDER}
-            className="outline-none bg-transparent w-full h-40 max-h-58 resize-none text-black placeholder-gray-500 pr-14 pb-12 whitespace-pre-wrap"
+            className="outline-none bg-transparent w-full h-40 max-h-58 resize-none text-black placeholder-gray-500 pr-28 pb-12"
           />
 
-          {/* Plus (Upload) - bottom-left */}
+          {/* Format button */}
+          {userInput && (
+            <button
+              onClick={() => setUserInput(formatPrompt(userInput))}
+              className="absolute bottom-4 right-20 bg-gray-200 hover:bg-gray-300 text-black px-3 py-1 rounded-md text-sm"
+              title="Format prompt"
+            >
+              Format
+            </button>
+          )}
+
+          {/* Plus (Upload) */}
           <label
             htmlFor="hero-upload"
             className="absolute bottom-4 left-4 cursor-pointer"
@@ -122,7 +159,7 @@ function Hero() {
             <Plus className="p-2 h-9 w-9 rounded-md text-black hover:bg-gray-200" />
           </label>
 
-          {/* Arrow Right (Generate) - bottom-right */}
+          {/* Arrow Right (Generate) */}
           {userInput && (
             <ArrowRight
               onClick={() => onGenerate(userInput)}

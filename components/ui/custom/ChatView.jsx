@@ -7,7 +7,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { MessagesContext } from "@/context/MessagesContext";
 import { UserDetailContext } from "@/context/UserDetailContext";
 import Image from "next/image";
-import { ArrowRight, Loader2Icon, Plus } from "lucide-react"; // ✅ Plus added
+import { ArrowRight, Loader2Icon, Plus } from "lucide-react";
 import Lookup from "@/app/data/Lookup";
 import axios from "axios";
 import Prompt from "@/app/data/Prompt";
@@ -18,6 +18,41 @@ import { toast } from "sonner";
 // ✅ Utility: count tokens
 export const countToken = (inputText) =>
   inputText.trim().split(/\s+/).filter(Boolean).length;
+
+// ✅ Utility: Format prompt (same as Hero.jsx)
+const formatPrompt = (raw) => {
+  if (!raw || typeof raw !== "string") return raw || "";
+
+  let s = raw.replace(/\r\n/g, "\n").replace(/\t/g, " ").replace(/\s+/g, " ").trim();
+
+  // Insert newline before numbers
+  s = s.replace(/ (\d)/, "\n$1");
+
+  // If number stuck to letters, add a space
+  s = s.replace(/(\d)(?=[A-Za-z])/g, "$1 ");
+
+  // Replace "1-" or "1." with "1 "
+  s = s.replace(/(\n|^)\s*([1-9][0-9]*)[-–—\.]/g, "$1$2 ");
+
+  // Correct common typos
+  const corrections = {
+    "\\bcrea\\b": "create",
+    "\\bcretae\\b": "create",
+  };
+  for (const pattern in corrections) {
+    s = s.replace(new RegExp(pattern, "gi"), (match) => {
+      const replacement = corrections[pattern];
+      return match[0] === match[0].toUpperCase()
+        ? replacement.charAt(0).toUpperCase() + replacement.slice(1)
+        : replacement;
+    });
+  }
+
+  // Capitalize first char
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+
+  return s;
+};
 
 function ChatView() {
   const { id } = useParams();
@@ -94,7 +129,10 @@ function ChatView() {
       toast("You don't have enough tokens!");
       return;
     }
-    setMessages((prev) => [...prev, { role: "user", content: input }]);
+
+    const formattedInput = formatPrompt(input);
+
+    setMessages((prev) => [...prev, { role: "user", content: formattedInput }]);
     setUserInput("");
   };
 
@@ -126,7 +164,7 @@ function ChatView() {
               />
             )}
 
-            <div className="flex flex-col text-gray-800">
+            <div className="flex flex-col text-gray-800 whitespace-pre-line">
               <ReactMarkdown>{msg.content}</ReactMarkdown>
             </div>
           </div>
@@ -161,7 +199,7 @@ function ChatView() {
               className="outline-none bg-transparent w-full h-24 max-h-56 resize-none text-gray-800"
             />
 
-            {/* Arrow Right (Generate) - bottom-right */}
+            {/* Arrow Right (Generate) */}
             {userInput && (
               <ArrowRight
                 onClick={() => onGenerate(userInput)}
@@ -170,7 +208,7 @@ function ChatView() {
             )}
           </div>
 
-          {/* ✅ Plus (Upload) - bottom-left */}
+          {/* ✅ Plus (Upload) */}
           <label
             htmlFor="chat-upload"
             className="absolute bottom-4 left-4 cursor-pointer"
