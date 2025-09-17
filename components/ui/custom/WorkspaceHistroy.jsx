@@ -10,8 +10,8 @@ import Link from "next/link";
 function WorkspaceHistory() {
   const { userDetail } = useContext(UserDetailContext);
   const convex = useConvex();
-  const [workspaceList, setWorkspaceList] = useState([]); // ✅ start as []
-  const { toggleSidebar } = useSidebar(); // ✅ fixed spelling
+  const [workspaceList, setWorkspaceList] = useState([]);
+  const { toggleSidebar } = useSidebar();
 
   useEffect(() => {
     if (userDetail?._id) {
@@ -23,9 +23,15 @@ function WorkspaceHistory() {
     try {
       const result = await convex.query(api.workspace.getAllWorkspaces, {
         userId: userDetail._id,
-      }); // ✅ fixed function name
-      setWorkspaceList(result);
-      console.log("Workspaces:", result);
+      });
+
+      setWorkspaceList(result || []);
+
+      // Log only IDs for debugging instead of 86 objects
+      console.log(
+        "Fetched workspaces:",
+        result?.map((w) => w._id)
+      );
     } catch (err) {
       console.error("Error fetching workspaces:", err);
     }
@@ -36,13 +42,15 @@ function WorkspaceHistory() {
       <h2 className="font-medium text-lg">Your Chats</h2>
       <div>
         {workspaceList.length > 0 ? (
-          workspaceList.map((workspace, index) => (
-            <Link href={`/workspace/${workspace._id}`} key={index}>
+          workspaceList.map((workspace) => (
+            <Link href={`/workspace/${workspace._id}`} key={workspace._id}>
               <h2
                 onClick={toggleSidebar}
                 className="text-sm text-gray-400 mt-2 font-light cursor-pointer hover:text-white"
               >
-                {workspace?.messages?.[0]?.content || "Untitled Workspace"}
+                {workspace?.title ||
+                  workspace?.messages?.[0]?.content ||
+                  "Untitled Workspace"}
               </h2>
             </Link>
           ))

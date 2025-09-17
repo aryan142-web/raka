@@ -1,55 +1,47 @@
-const {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold, // ✅ also typo fix: Threshold not Thresold
-} = require("@google/generative-ai");
+// configs/AiModel.js
+import OpenAI from "openai";
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-exp", // ✅ fixed typo
+// ✅ Server-side client (do NOT expose apiKey to client)
+export const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // set in `.env.local`
 });
 
-const generationConfig = {
-  temperature: 1,
-  topP: 0.95,
-  topK: 40,
-  maxOutputTokens: 8192,
-  responseMimeType: "text/plain"
-};
+// 🔹 General chat session
+export async function chatSession(messages) {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4.1-nano", // ✅ use OpenAI GPT-4.1-nano
+    messages,
+    temperature: 0.7,
+    max_tokens: 4000,
+  });
 
-const CodeGenerationConfig = {
-  temperature: 1,
-  topP: 0.95,
-  topK: 40,
-  maxOutputTokens: 8192,
-  responseMimeType: "application/json",
-};
+  return response.choices[0].message.content;
+}
 
-export const chatSession = model.startChat({
-  generationConfig,
-  history: [],
-});
+// 🔹 Code/project generation session
+export async function GenAiCode(prompt) {
+  const SYSTEM_PROMPT = `
+You are an AI that generates complete, production-ready Next.js 15 projects.
 
-export const GenAiCode = model.startChat({
-  generationConfig: CodeGenerationConfig,
-  history: [
-    {
-      role: "user",
-      parts: [
-        {
-          text: "Generate a to-do app: Generate a Project in React. Create multiple files.",
-        },
-      ],
-    },
-    {
-      role: "model",
-      parts: [
-        {
-          text: "```json\n{\n \"projectTitle\": \"Simple To-Do App\",\n \"projectDescription\": \"A simple to-do-app in React\",\n \"projectTechStack\": \"React, TypeScript, Node.js\" }\n```",
-        },
-      ],
-    },
-  ],
-});
+Return valid JSON ONLY in this format:
+{
+  "projectTitle": "Professional descriptive title",
+  "explanation": "Technical overview",
+  "files": { "/app/page.js": { "code": "..." } },
+  "generatedFiles": ["..."]
+}
+- No markdown, no code fences, JSON only.
+`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4.1-nano", // ✅ switched to GPT-4.1-nano
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
+    temperature: 0.8,
+    max_tokens: 6000,
+  });
+
+  return response.choices[0].message.content;
+}

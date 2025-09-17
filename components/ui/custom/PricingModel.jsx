@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api"
 
 function PricingModel() {
   const { userDetail, setUserDetail } = useContext(UserDetailContext)
-  const UpdateToken = useMutation(api.users.UpdateToken)
+  const UpdateToken = useMutation(api.users.updateToken)
   const [selectedOption, setSelectedOption] = useState(null)
 
   const onPaymentSuccess = async () => {

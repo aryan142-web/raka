@@ -78,28 +78,28 @@ export default config;
       tokens:'50K',
       value:50000,
       desc:'Ideal for hobbyists and casual users for light, exploratory use.',
-      price:4.99
+      price:9.99
     },
     {
       name:'Starter',
       tokens:'120K',
       value:120000,
-      desc:'Designed for professionals who need to use Bolt a few times per week.',
-      price:9.99
+      desc:'Designed for professionals who need to use pi a few times per week.',
+      price:19.99
     },
     {
       name:'Pro',
       tokens:'2.5M',
       value:2500000,
-      desc:'Designed for professionals who need to use Bolt a few times per week.',
-      price:19.99
+      desc:'Designed for professionals who need to use pi a few times per week.',
+      price:29.99
     },
     {
       name:'Unlimted (License)',
       tokens:'Unmited',
       value:999999999,
-      desc:'Designed for professionals who need to use Bolt a few times per week.',
-      price:49.99
+      desc:'Designed for professionals who need to use pi a few times per week.',
+      price:59.99
     }
   ]
 
