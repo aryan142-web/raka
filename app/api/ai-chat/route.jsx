@@ -1,6 +1,9 @@
-// app/api/ai-chat/route.js
-import { chatSession } from "@/configs/AiModel";
 import { NextResponse } from "next/server";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // make sure this exists in .env.local
+});
 
 export async function POST(req) {
   try {
@@ -13,15 +16,21 @@ export async function POST(req) {
       );
     }
 
-    // Build conversation for chatSession
+    // Build conversation
     const conversation = [
       { role: "system", content: systemPrompt || "You are an AI assistant." },
       ...messages,
     ];
 
-    const result = await chatSession(conversation);
+    // Call OpenAI
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini", // you can change to gpt-4.1 or gpt-3.5-turbo
+      messages: conversation,
+    });
 
-    return NextResponse.json({ result: result.trim() });
+    const reply = completion.choices[0]?.message?.content || "";
+
+    return NextResponse.json({ result: reply.trim() });
   } catch (e) {
     console.error("🚨 AI Chat error:", e);
     return NextResponse.json(

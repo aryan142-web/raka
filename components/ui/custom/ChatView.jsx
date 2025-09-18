@@ -19,7 +19,7 @@ import { toast } from "sonner";
 export const countToken = (inputText) =>
   inputText.trim().split(/\s+/).filter(Boolean).length;
 
-// ✅ Utility: Format prompt (same as Hero.jsx)
+// ✅ Utility: Format prompt
 const formatPrompt = (raw) => {
   if (!raw || typeof raw !== "string") return raw || "";
 
@@ -89,22 +89,24 @@ function ChatView() {
   useEffect(() => {
     if (messages?.length > 0) {
       const last = messages[messages.length - 1];
-      if (last.role === "user") getAiResponse(last);
+      if (last.role === "user") getAiResponse();
     }
   }, [messages]);
 
   const getAiResponse = async () => {
     setLoading(true);
     try {
-      const PROMPT = JSON.stringify(messages) + Prompt.CHAT_PROMPT;
-      const result = await axios.post("/api/ai-chat", { prompt: PROMPT });
+      const result = await axios.post("/api/ai-chat", {
+        messages,
+        systemPrompt: Prompt.CHAT_PROMPT,
+      });
 
       const aiResp = { role: "ai", content: result.data.result };
 
-      // update frontend messages
+      // ✅ update frontend messages
       setMessages((prev) => [...prev, aiResp]);
 
-      // ✅ update messages in Convex workspaces
+      // ✅ update messages in Convex workspaces (use latest state)
       await updateMessages({
         workspaceId: id,
         messages: [...messages, aiResp],
@@ -132,6 +134,7 @@ function ChatView() {
 
     const formattedInput = formatPrompt(input);
 
+    // ✅ add user message
     setMessages((prev) => [...prev, { role: "user", content: formattedInput }]);
     setUserInput("");
   };
