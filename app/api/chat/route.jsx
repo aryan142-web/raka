@@ -1,24 +1,71 @@
+import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!, // ✅ only once
+});
 
-let conversation = [
-  { role: "system", content: "You are a helpful assistant." },
-];
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { messages, systemPrompt } = body || {};
 
-export async function POST(req) {
-  const { message } = await req.json();
+    // ✅ Validate messages
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json(
+        { error: "Messages must be a non-empty array" },
+        { status: 400 }
+      );
+    }
 
-  conversation.push({ role: "user", content: message });
+    // ✅ Clean and validate
+    const cleanedMessages = messages.filter(
+      (m: any) =>
+        m &&
+        ["user", "assistant"].includes(m.role) &&
+        typeof m.content === "string" &&
+        m.content.trim() !== ""
+    );
 
-  const completion = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: conversation,
-  });
+    if (cleanedMessages.length === 0) {
+      return NextResponse.json(
+        { error: "No valid messages provided" },
+        { status: 400 }
+      );
+    }
 
-  const reply = completion.choices[0].message.content;
+    // ✅ Limit history
+    const MAX_MESSAGES = 50;
+    const safeMessages =
+      cleanedMessages.length > MAX_MESSAGES
+        ? cleanedMessages.slice(-MAX_MESSAGES)
+        : cleanedMessages;
 
-  conversation.push({ role: "assistant", content: reply });
+    // ✅ Build conversation
+    const conversation = [
+      { role: "system", content: systemPrompt || "You are an AI assistant." },
+      ...safeMessages,
+    ];
 
-  return Response.json({ reply });
+    // Call OpenAI
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: conversation,
+      temperature: 0.7,
+    });
+
+    const reply = completion.choices[0]?.message?.content?.trim() || "";
+
+    // ✅ Return both reply and updated history
+    return NextResponse.json({
+      result: reply,
+      updatedMessages: [...safeMessages, { role: "assistant", content: reply }],
+    });
+  } catch (e: any) {
+    console.error("🚨 AI Chat error:", e);
+    return NextResponse.json(
+      { error: e?.message || "AI chat failed" },
+      { status: 500 }
+    );
+  }
 }
