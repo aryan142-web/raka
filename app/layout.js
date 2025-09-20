@@ -12,6 +12,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full w-full">
+        <head>
+          <link rel="icon" type="image/svg+xml" href="/vercel.svg" />
+        </head>
       <body className="min-h-screen w-full bg-orange-100 text-black overflow-x-hidden">
         <ConvexClientProvider>
           <Provider>
